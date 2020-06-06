@@ -3,7 +3,7 @@
 Формат данных: ID_SOURCE;SOURCE_ADDRESS
 
 Выполнить в консоле
-py Parser.py
+py main.py
 
 Результат работы скрипта сохраняется в файл result_odin_null_odin.csv
 
