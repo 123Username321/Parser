@@ -43,20 +43,15 @@ st = time.time()
 
 iter = 0
 for address in addresses["address"]:
-    #print(f"Входная строка: {address}")
-
+    
     matches = re.findall(r"[MDCXVLImdcxvli]+", address)
     for i in range(0, len(matches)):
         address = re.sub(r"{}".format(matches[i]), str(roman_to_int(matches[i])), address, 1)
 
     address = clear(address)
-    #print(f"Регулярки: {address}")
 
     address = re.sub(r",", " , ", address)
-    #address = re.sub(r"\.", " . ", address)
     lexems = re.split(r"[ \"]+", address)
-
-    #print(lexems)
 
     keys = {"г": "city", "гор": "city", "город": "city", "с": "city", "п": "city", "пос": "city", "поселок": "city", "пгт": "city",
             "улица": "street", "ул": "street", "проспект": "street", "пр": "street", "пр-кт": "street", "бульвар": "street",
@@ -73,7 +68,7 @@ for address in addresses["address"]:
     curType = "none"
 
     types = list(range(0, len(lexems)))
-    meaning = list(range(0, len(lexems))) #none, value, trigger
+    meaning = list(range(0, len(lexems)))
     for i in range(len(lexems)):
         types[i] = "none"
         meaning[i] = "none"
@@ -105,9 +100,7 @@ for address in addresses["address"]:
 
         types[i] = curType
         i += 1
-
-    #print(types)
-
+        
     lastType = "none"
     i = 0
     while True:
@@ -132,10 +125,6 @@ for address in addresses["address"]:
         if i < len(lexems) - 1 and not types[i + 1] == 'comma':
             address += " "
 
-    #print(types)
-    #print(lexems)
-    #print(address)
-    #print("")
     if iter % 5000 == 0:
         print(iter)
 
