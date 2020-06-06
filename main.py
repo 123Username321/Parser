@@ -1,28 +1,22 @@
-import romanify
 import re
+import time
+import pandas as pd
 
 def roman_to_int(input):
-    """ Convert a Roman numeral to an integer. """
-
     input = input.upper()
     nums = {'M': 1000, 'D': 500, 'C': 100, 'L': 50, 'X': 10, 'V': 5, 'I': 1}
     sum = 0
     for i in range(len(input)):
         value = nums[input[i]]
-        # If the next place holds a larger number, this value is negative
-        if i+1 < len(input) and nums[input[i+1]] > value:
+        if i + 1 < len(input) and nums[input[i+1]] > value:
             sum -= value
         else:
             sum += value
     return sum
 
-def unquote(text):
-    #text = re.sub(r"^(\")+", "", text)
-    #text = re.sub(r"(\")+$", "", text)
-    #return re.sub(r"(\")+", "\"", text)
-    text = re.sub(r"^([^А-Яа-я1-9])+", "", text, flags=re.I | re.DOTALL | re.UNICODE)
-    text = re.sub(r"([^А-Яа-я1-9])+$", "", text, flags=re.I | re.DOTALL | re.UNICODE)
-    return re.sub(r"([^А-Яа-я0-9 ]){2,}", "", text, flags=re.I | re.DOTALL | re.UNICODE)
+def clear(text):
+    return re.sub(r"(^[^А-Яа-я1-9]+(?=[А-Яа-я0-9]))|([A-Za-z]+)|([^А-Яа-я0-9 ,.]{2,})|(\(.{0,}\))|([ .-][.-]+,)|((?<=(Москва ))и(?=( МО)))",
+                  "", text, flags=re.I | re.DOTALL | re.UNICODE)
 
 def isInteger(text):
     try:
@@ -39,92 +33,116 @@ def isPostIndex(text):
 
 
 
+addressData = pd.read_csv("data.csv", encoding='utf-8', sep=";", error_bad_lines=False, quoting=3)
+result = []
+addresses = pd.DataFrame(addressData)
+print("Size: " + str(len(addressData)))
+result_file = open("C:/result.csv", "w")
 
-#address = str(input("Адрес: "))
-address = "\"\"\"0, Россия г. Москва, м. ВДНХ, ул. Ленинская Слобода, д. XII помещение XIII КОМ. 27\""
-print(f"Входная строка: {address}")
+st = time.time()
 
-matches = re.findall(r"[MDCXVLImdcxvli]+", address)
-#print(Arabicification.roman_to_int("XV"))
-for i in range(0, len(matches)):
-    address = re.sub(r"{}".format(matches[i]), str(roman_to_int(matches[i])), address, 1)
+iter = 0
+for address in addresses["address"]:
+    #print(f"Входная строка: {address}")
 
-address = unquote(address)
+    matches = re.findall(r"[MDCXVLImdcxvli]+", address)
+    for i in range(0, len(matches)):
+        address = re.sub(r"{}".format(matches[i]), str(roman_to_int(matches[i])), address, 1)
 
-address = re.sub(r",", " ,", address)
-#address = re.sub(r"\"", " \" ", address)
-lexems = re.split(r"[ .\"]+", address)
-print(lexems)
+    address = clear(address)
+    #print(f"Регулярки: {address}")
 
-keys = {"г": "city", "гор": "city", "город": "city", "с": "city", "п": "city", "пос": "city", "поселок": "city", "пгт": "city",
-        "улица": "street", "ул": "street", "проспект": "street", "пр": "street", "пр-кт": "street", "бульвар": "street",
-        "б-р": "street", "аллея": "street", "шоссе": "street", "шос": "street", "ш": "street", "площадь": "street",
-        "пл": "street",
-        "дом": "house", "д": "house",
-        "м": "metro", "метро": "metro"}
+    address = re.sub(r",", " , ", address)
+    #address = re.sub(r"\.", " . ", address)
+    lexems = re.split(r"[ \"]+", address)
 
-isShort = ["г", "гор", "с", "п", "пос", "пгт", "ул", "пр", "шос", "ш", "пл", "д", "м", ]
+    #print(lexems)
 
-isDone = False
-curType = "none"
+    keys = {"г": "city", "гор": "city", "город": "city", "с": "city", "п": "city", "пос": "city", "поселок": "city", "пгт": "city",
+            "улица": "street", "ул": "street", "проспект": "street", "пр": "street", "пр-кт": "street", "бульвар": "street",
+            "б-р": "street", "аллея": "street", "шоссе": "street", "шос": "street", "ш": "street", "площадь": "street",
+            "пл": "street",
+            "дом": "house", "д": "house",
+            "м": "metro", "метро": "metro"}
 
-types = list(range(0, len(lexems)))
-meaning = list(range(0, len(lexems))) #none, value, trigger
-for i in range(len(lexems)):
-    types[i] = "none"
-    meaning[i] = "none"
+    isShort = ["г", "гор", "с", "п", "пос", "пгт", "ул", "пр", "шос", "ш", "пл", "д", "м", ]
+
+    delete = ["м", "метро"]
+
+    isDone = False
+    curType = "none"
+
+    types = list(range(0, len(lexems)))
+    meaning = list(range(0, len(lexems))) #none, value, trigger
+    for i in range(len(lexems)):
+        types[i] = "none"
+        meaning[i] = "none"
 
 
-i = 0
-while i < len(lexems):
-    if i >= len(lexems):
-        break
-    if (lexems[i] == "0"):
-        curType = "trash"
-    elif (isPostIndex(lexems[i])):
-        curType = "post_index"
-    elif lexems[i].lower() == "россия":
-        curType = "country"
-    elif lexems[i] == ',':
-        curType = "comma"
-    elif lexems[i].lower() in keys:
-        type = keys[lexems[i].lower()]
-        curType = keys[lexems[i].lower()]
+    i = 0
+    while i < len(lexems):
+        if i >= len(lexems):
+            break
+        if (lexems[i] == "0"):
+            curType = "trash"
+        elif (isPostIndex(lexems[i])):
+            curType = "post_index"
+        elif lexems[i].lower() == "россия":
+            curType = "country"
+        elif lexems[i] == ',':
+            curType = "comma"
+        elif lexems[i].lower() in keys:
+            type = keys[lexems[i].lower()]
+            curType = keys[lexems[i].lower()]
 
-        types[i] = type
-    else:
+            types[i] = type
+        else:
+            if len(types) > 0 and types[i - 1] == "comma":
+                curType = "none"
+                types[i] = curType
+
+            types[i] = curType
+
         types[i] = curType
+        i += 1
 
-    types[i] = curType
-    i += 1
+    #print(types)
 
+    lastType = "none"
+    i = 0
+    while True:
+        if i >= len(lexems):
+            break
 
-lastType = "none"
-i = 0
-while True:
-    if i >= len(lexems):
-        break
-
-    if types[i] == "comma":
-        if i == 0 or i > 0 and types[i - 1] == "comma":
+        if types[i] == "comma":
+            if i == 0 or i > 0 and types[i - 1] == "comma":
+                del types[i]
+                del lexems[i]
+                i -= 1
+        if types[i] == "metro" or types[i] == "trash":
             del types[i]
             del lexems[i]
             i -= 1
-    if types[i] == "metro" or types[i] == "trash":
-        del types[i]
-        del lexems[i]
-        i -= 1
-    i += 1
+        i += 1
 
-address = ""
-for i in range(len(lexems)):
-    address += lexems[i]
+    address = ""
+    for i in range(len(lexems)):
+        address += lexems[i]
 
-    if i < len(lexems) - 1 and not types[i + 1] == 'comma':
-        address += " "
+        if i < len(lexems) - 1 and not types[i + 1] == 'comma':
+            address += " "
 
-print(types)
-print(lexems)
-print(address)
+    #print(types)
+    #print(lexems)
+    #print(address)
+    #print("")
+    if iter % 5000 == 0:
+        print(iter)
 
+    result.append(address)
+    result_file.write(f"{addresses.id[iter]};{addresses.address[iter]};{address}\n")
+    iter += 1
 
+ft = time.time()
+print("Time: " + str((ft - st) * 1000) + " msec")
+result_file.close()
