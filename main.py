@@ -37,7 +37,7 @@ addressData = pd.read_csv("data.csv", encoding='utf-8', sep=";", error_bad_lines
 result = []
 addresses = pd.DataFrame(addressData)
 print("Size: " + str(len(addressData)))
-result_file = open("C:/result.csv", "w")
+result_file = open("C:/result_odin_null_odin.csv", "w")
 
 st = time.time()
 
