@@ -1,12 +1,12 @@
 # Запуск
 В корневой каталог репозитория необходимо поместить файл data.csv  
-Формат входных данных: *ID_SOURCE;ADDRESS_SOURCE*
+Формат входных данных: *id;address*
 
 Выполнить в консоле  
 **python3 main.py**
 
 Результат работы скрипта сохраняется в файл result_odin_null_odin.csv  
-Формат выходных данных: *ID_SOURCE;ADDRESS_SOURCE;PROCESSED_SOURCE*
+Формат выходных данных: *id;address;result*
 
 # Зависимости
 **Python 3.8.1**  
